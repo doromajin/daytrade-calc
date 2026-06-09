@@ -267,6 +267,7 @@ function syncRatio(changed) {
     var s = parseFloat(document.getElementById('stopPct').value) || 0.5;
     document.getElementById('profitPct').value = (s * 2).toFixed(1);
   }
+  saveSettings();
 }
 
 function getPct() {
@@ -274,6 +275,26 @@ function getPct() {
     profit: parseFloat(document.getElementById('profitPct').value) || 1.0,
     stop:   parseFloat(document.getElementById('stopPct').value)   || 0.5
   };
+}
+
+function saveSettings() {
+  localStorage.setItem('profitPct', document.getElementById('profitPct').value);
+  localStorage.setItem('stopPct',   document.getElementById('stopPct').value);
+}
+
+function saveMaxloss() {
+  var v = document.getElementById('inp-maxloss').value;
+  if (v) localStorage.setItem('maxloss', v);
+  else   localStorage.removeItem('maxloss');
+}
+
+function loadSaved() {
+  var pp = localStorage.getItem('profitPct');
+  var sp = localStorage.getItem('stopPct');
+  var ml = localStorage.getItem('maxloss');
+  if (pp) document.getElementById('profitPct').value = pp;
+  if (sp) document.getElementById('stopPct').value   = sp;
+  if (ml) document.getElementById('inp-maxloss').value = ml;
 }
 
 function onFocus(field) {
@@ -295,7 +316,12 @@ function onInput(field) {
 
 function recalcFromSettings() {
   updateBadges();
+  saveSettings();
   calculate(lastEdited);
+  var maxloss = parseFloat(document.getElementById('inp-maxloss').value);
+  var shares  = parseFloat(document.getElementById('inp-shares').value);
+  if (maxloss) { calcSharesFromLoss(); }
+  else if (shares) { calcLossFromShares(); }
   updatePnl();
 }
 
@@ -348,12 +374,11 @@ function calcSharesFromLoss() {
   var maxloss = parseFloat(document.getElementById('inp-maxloss').value);
   var entry   = parseFloat(document.getElementById('inp-entry').value);
   var stop    = parseFloat(document.getElementById('inp-stop').value);
-  var hint    = document.getElementById('hint-shares');
-  if (!maxloss || !entry || !stop || entry <= stop) { hint.textContent = ''; return; }
+  if (!maxloss || !entry || !stop || entry <= stop) return;
+  saveMaxloss();
   var lossPerShare = entry - stop;
   var rawShares    = Math.floor(maxloss / lossPerShare);
   var lotShares    = Math.floor(rawShares / 100) * 100;
-  hint.textContent = '→ ' + rawShares + '株（100株単位: ' + lotShares + '株）';
   if (lotShares > 0) {
     document.getElementById('inp-shares').value = lotShares;
     updatePnl();
@@ -365,16 +390,16 @@ function calcLossFromShares() {
   var entry  = parseFloat(document.getElementById('inp-entry').value);
   var stop   = parseFloat(document.getElementById('inp-stop').value);
   if (!shares || !entry || !stop || entry <= stop) return;
-  document.getElementById('inp-maxloss').value = Math.round((entry - stop) * shares);
-  document.getElementById('hint-shares').textContent = '';
+  var ml = Math.round((entry - stop) * shares);
+  document.getElementById('inp-maxloss').value = ml;
+  saveMaxloss();
   updatePnl();
 }
 
 function clearAll() {
-  ['inp-profit','inp-entry','inp-stop','inp-shares','inp-maxloss'].forEach(function(id) {
+  ['inp-profit','inp-entry','inp-stop','inp-shares'].forEach(function(id) {
     document.getElementById(id).value = '';
   });
-  document.getElementById('hint-shares').textContent = '';
   document.getElementById('pnl-section').style.display = 'none';
   ['profit','entry','stop'].forEach(function(f) {
     document.getElementById('card-' + f).classList.remove('active');
@@ -383,6 +408,8 @@ function clearAll() {
   lastEdited = 'entry';
 }
 
+updateBadges();
+loadSaved();
 updateBadges();
 </script>
 </body>
