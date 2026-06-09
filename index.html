@@ -152,6 +152,23 @@
   .pnl-card.profit .pnl-value { color: var(--green); }
   .pnl-card.loss   .pnl-value { color: var(--red); }
 
+  .capital-row {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .capital-label { font-size: 11px; color: var(--muted); font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0; }
+  .capital-input {
+    background: none; border: none; outline: none;
+    font-size: 26px; font-weight: 700; color: var(--white);
+    width: 100%; text-align: right; -moz-appearance: textfield;
+  }
+  .capital-input::placeholder { color: #2e3340; }
+  .capital-input::-webkit-outer-spin-button,
+  .capital-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .capital-unit { font-size: 14px; color: var(--muted); flex-shrink: 0; }
+
   .btn-clear {
     width: 100%; padding: 14px; background: var(--surface);
     border: 0.5px solid var(--border); border-radius: 12px;
@@ -243,13 +260,20 @@
   <span class="shares-unit">株</span>
 </div>
 
+<div class="capital-row">
+  <span class="capital-label">買付余力</span>
+  <input class="capital-input" type="number" id="inp-capital" placeholder="—" step="10000" min="1"
+         oninput="saveCapital()">
+  <span class="capital-unit">円</span>
+</div>
+
 <div class="pnl-row" id="pnl-section" style="display:none">
   <div class="pnl-card profit">
-    <div class="pnl-title">最大利益</div>
+    <div class="pnl-title">想定利益</div>
     <div class="pnl-value" id="pnl-profit">—</div>
   </div>
   <div class="pnl-card loss">
-    <div class="pnl-title">最大損失</div>
+    <div class="pnl-title">想定損失</div>
     <div class="pnl-value" id="pnl-loss">—</div>
   </div>
 </div>
@@ -288,13 +312,21 @@ function saveMaxloss() {
   else   localStorage.removeItem('maxloss');
 }
 
+function saveCapital() {
+  var v = document.getElementById('inp-capital').value;
+  if (v) localStorage.setItem('capital', v);
+  else   localStorage.removeItem('capital');
+}
+
 function loadSaved() {
   var pp = localStorage.getItem('profitPct');
   var sp = localStorage.getItem('stopPct');
   var ml = localStorage.getItem('maxloss');
-  if (pp) document.getElementById('profitPct').value = pp;
-  if (sp) document.getElementById('stopPct').value   = sp;
-  if (ml) document.getElementById('inp-maxloss').value = ml;
+  var ca = localStorage.getItem('capital');
+  if (pp) document.getElementById('profitPct').value    = pp;
+  if (sp) document.getElementById('stopPct').value      = sp;
+  if (ml) document.getElementById('inp-maxloss').value  = ml;
+  if (ca) document.getElementById('inp-capital').value  = ca;
 }
 
 function onFocus(field) {
