@@ -97,7 +97,7 @@
   </div>
   <div class="panel-section">
     <div class="panel-label">広告</div>
-    <button class="btn-purchase" onclick="doPurchase()">広告を削除 ¥1,000</button>
+   <button class="btn-purchase" id="btn-purchase" onclick="doPurchase()">広告を削除 ¥1,000</button>
     <div class="thanks-text" id="thanks-text">ご支援ありがとうございます</div>
   </div>
   <div class="version-text">デイトレ計算ツール v1.0.0</div>
@@ -216,7 +216,16 @@ function closePanel() {
 function doPurchase() {
   if (typeof AndroidBridge !== 'undefined') {
     AndroidBridge.purchase();
-    document.getElementById('thanks-text').style.display = 'block';
+  }
+}
+
+function disablePurchaseButton() {
+  var btn = document.getElementById('btn-purchase');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+    btn.textContent = '購入済み';
   }
 }
 
@@ -294,7 +303,9 @@ function loadSaved() {
   if (ca) document.getElementById('inp-capital').value = parseInt(ca).toLocaleString('ja-JP');
   if (rp) document.getElementById('ratioProfit').value = rp;
   if (rs) document.getElementById('ratioStop').value = rs;
-}
+if (typeof AndroidBridge !== 'undefined' && AndroidBridge.isPurchased()) {
+    disablePurchaseButton();
+  }}
 
 function onFocus(field) {
   ['profit','entry','stop'].forEach(function(f) {
