@@ -88,10 +88,10 @@
 <div class="container">
 
 <!-- ハンバーガーメニュー -->
-<div id="menu-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:99;" onclick="closeMenu()"></div>
+<div id="menu-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:99;"></div>
 
 <!-- シミュレーターモーダル -->
-<div id="sim-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:99;" onclick="closeSim()"></div>
+<div id="sim-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:99;"></div>
 <div id="sim-modal" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:100; background:var(--bg-primary); border-radius:16px 16px 0 0; max-height:90vh; overflow-y:auto; padding:1.25rem 1rem; padding-bottom:max(1.5rem, env(safe-area-inset-bottom));" onclick="event.stopPropagation()">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
     <p style="font-size:15px; font-weight:500; margin:0;">5年後シミュレーション</p>
@@ -192,7 +192,7 @@
 </div>
 <p class="updated" id="last-updated">株価・為替は未取得</p>
 
-<div id="sim-area" onclick="openSim()" style="cursor:pointer;">
+<div id="sim-area" role="button" tabindex="0" style="cursor:pointer; -webkit-tap-highlight-color:rgba(0,0,0,0.05); user-select:none; -webkit-user-select:none;">
 <div class="header-row">
   <div>
     <p class="label">総資産</p>

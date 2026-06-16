@@ -409,6 +409,19 @@
     buildStockInputs(); buildFundInputs(); attachInputListeners();
     try { render(); } catch (e) {}
 
+    // sim-area: クリック・タッチ両対応
+    var simArea = $('sim-area');
+    if (simArea) {
+      simArea.addEventListener('click', function () { window.openSim(); });
+      simArea.addEventListener('touchend', function (e) {
+        e.preventDefault();
+        window.openSim();
+      });
+      simArea.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') window.openSim();
+      });
+    }
+
     $('refresh-btn').addEventListener('click', function () {
       refreshAll(function () {
         var total = render();
@@ -462,8 +475,11 @@
 
   // ハンバーガーメニューの開閉(グローバル関数)
   window.openMenu = function () {
+    var overlay = $('menu-overlay');
     $('menu-drawer').style.display = 'block';
-    $('menu-overlay').style.display = 'block';
+    overlay.style.display = 'block';
+    overlay.onclick = window.closeMenu;
+    overlay.ontouchend = function(e) { e.preventDefault(); window.closeMenu(); };
   };
   window.closeMenu = function () {
     $('menu-drawer').style.display = 'none';
@@ -485,8 +501,11 @@
         if (p.tsumi) $('sim-tsumi').value = p.tsumi;
       }
     } catch(e) {}
-    $('sim-overlay').style.display = 'block';
+    var overlay = $('sim-overlay');
+    overlay.style.display = 'block';
     $('sim-modal').style.display = 'block';
+    overlay.onclick = window.closeSim;
+    overlay.ontouchend = function(e) { e.preventDefault(); window.closeSim(); };
     calcSim();
   };
   window.closeSim = function () {
