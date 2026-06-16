@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>デイトレ計算</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,7 +13,7 @@
     --neutral-dim: rgba(160,168,191,0.07);
     --white: #e8eaf2; --muted: #555d72; --accent: #4b7bff;
   }
-  body { background:var(--bg); color:var(--white); font-family:-apple-system,'Hiragino Sans',sans-serif; min-height:100svh; padding:16px; padding-bottom:40px; }
+  body { background:var(--bg); color:var(--white); font-family:-apple-system,'Hiragino Sans',sans-serif; min-height:100svh; padding: env(safe-area-inset-top, 16px) 16px 40px; }
   .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
   h1 { font-size:12px; font-weight:600; letter-spacing:0.14em; color:var(--muted); text-transform:uppercase; }
   .menu-btn { background:none; border:none; cursor:pointer; padding:4px; display:flex; flex-direction:column; gap:5px; }
