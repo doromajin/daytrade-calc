@@ -1,0 +1,15 @@
+{
+  "name": "資産管理ダッシュボード",
+  "short_name": "資産管理",
+  "description": "米国株・投資信託・iDeCo・現金の資産を一元管理し、25歳1000万円/30歳1億円の目標進捗を表示します。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
