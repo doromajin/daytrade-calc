@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>デイトレ計算</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0f14; --surface: #161920; --border: #252830;
+    --green: #22c97a; --green-dim: rgba(34,201,122,0.1);
+    --red: #e05555;   --red-dim: rgba(224,85,85,0.1);
+    --neutral-dim: rgba(160,168,191,0.07);
+    --white: #e8eaf2; --muted: #555d72; --accent: #4b7bff;
+  }
+  body { background:var(--bg); color:var(--white); font-family:-apple-system,'Hiragino Sans',sans-serif; min-height:100svh; padding: env(safe-area-inset-top, 16px) 16px 40px 16px; }
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  h1 { font-size:12px; font-weight:600; letter-spacing:0.14em; color:var(--muted); text-transform:uppercase; }
+  .menu-btn { background:none; border:none; cursor:pointer; padding:4px; display:flex; flex-direction:column; gap:5px; }
+  .menu-btn span { display:block; width:20px; height:2px; background:var(--muted); border-radius:2px; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; }
+  .overlay.open { display:block; }
+  .panel { position:fixed; top:0; right:-280px; width:280px; height:100%; background:var(--surface); z-index:101; transition:right 0.25s; padding:24px 20px; display:flex; flex-direction:column; }
+  .panel.open { right:0; }
+  .panel-title { font-size:13px; font-weight:700; color:var(--white); letter-spacing:0.08em; margin-bottom:24px; }
+  .panel-section { margin-bottom:20px; }
+  .panel-label { font-size:10px; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:8px; }
+  .ratio-row { display:flex; align-items:center; gap:8px; }
+  .ratio-input { background:var(--bg); border:0.5px solid var(--border); border-radius:8px; color:var(--white); font-size:16px; font-weight:700; width:60px; padding:8px 10px; text-align:center; outline:none; }
+  .ratio-sep { color:var(--muted); font-size:16px; font-weight:700; }
+  .ratio-hint { font-size:10px; color:var(--muted); margin-top:6px; }
+  .btn-purchase { width:100%; padding:14px; background:var(--accent); border:none; border-radius:12px; color:#fff; font-size:14px; font-weight:700; cursor:pointer; letter-spacing:0.04em; margin-bottom:8px; }
+  .btn-purchase:active { opacity:0.8; }
+  .thanks-text { font-size:10px; color:var(--muted); text-align:center; display:block; margin-top:4px; }
+  .version-text { font-size:11px; color:var(--muted); text-align:center; margin-top:auto; padding-top:20px; }
+  .settings { display:flex; gap:8px; margin-bottom:18px; }
+  .setting-item { flex:1; background:var(--surface); border:0.5px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .setting-label { font-size:10px; color:var(--muted); margin-bottom:4px; letter-spacing:0.05em; }
+  .setting-input { display:flex; align-items:center; gap:3px; }
+  .setting-input input { background:none; border:none; outline:none; color:var(--white); font-size:18px; font-weight:700; width:52px; -moz-appearance:textfield; }
+  .setting-input input::-webkit-outer-spin-button, .setting-input input::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .pct-label { font-size:13px; color:var(--muted); }
+  .cards { display:flex; flex-direction:column; gap:6px; margin-bottom:6px; }
+  .card { border-radius:14px; border:1.5px solid var(--border); padding:14px 16px; transition:border-color 0.12s; }
+  .card.green  { background:var(--green-dim);  border-color:rgba(34,201,122,0.2); }
+  .card.red    { background:var(--red-dim);     border-color:rgba(224,85,85,0.2); }
+  .card.neutral{ background:var(--neutral-dim); border-color:var(--border); }
+  .card.active.green  { border-color:var(--green); }
+  .card.active.red    { border-color:var(--red); }
+  .card.active.neutral{ border-color:var(--accent); }
+  .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .card-label { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+  .card.green  .card-label { color:var(--green); }
+  .card.red    .card-label { color:var(--red); }
+  .card.neutral .card-label{ color:#a0a8bf; }
+  .card-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600; }
+  .card.green  .card-badge { background:var(--green-dim); color:var(--green); }
+  .card.red    .card-badge { background:var(--red-dim);   color:var(--red); }
+  .card.neutral .card-badge{ background:rgba(160,168,191,0.1); color:#a0a8bf; }
+  .card-input-row { display:flex; align-items:baseline; }
+  .price-input { background:none; border:none; outline:none; font-size:34px; font-weight:700; color:var(--white); width:100%; letter-spacing:-0.5px; }
+  .price-input::placeholder { color:#2e3340; }
+  .yen-label { font-size:16px; color:var(--muted); margin-left:3px; flex-shrink:0; }
+  .bottom-rows { display:flex; flex-direction:column; gap:6px; margin-top:6px; margin-bottom:14px; }
+  .data-row { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+  .data-label { font-size:11px; color:var(--muted); font-weight:700; letter-spacing:0.06em; text-transform:uppercase; flex-shrink:0; min-width:68px; }
+  .data-input { background:none; border:none; outline:none; font-size:26px; font-weight:700; color:var(--white); width:100%; text-align:right; }
+  .data-input.red-val { color:var(--red); }
+  .data-input::placeholder { color:#2e3340; }
+  .data-unit { font-size:14px; color:var(--muted); flex-shrink:0; }
+  .pnl-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .pnl-card { border-radius:12px; padding:12px 14px; text-align:center; }
+  .pnl-card.profit { background:var(--green-dim); border:0.5px solid rgba(34,201,122,0.18); }
+  .pnl-card.loss   { background:var(--red-dim);   border:0.5px solid rgba(224,85,85,0.18); }
+  .pnl-title { font-size:10px; color:var(--muted); margin-bottom:5px; letter-spacing:0.05em; }
+  .pnl-value { font-size:22px; font-weight:700; }
+  .pnl-card.profit .pnl-value { color:var(--green); }
+  .pnl-card.loss   .pnl-value { color:var(--red); }
+  .btn-clear { width:100%; padding:14px; background:var(--surface); border:0.5px solid var(--border); border-radius:12px; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer; letter-spacing:0.04em; }
+  .btn-clear:active { opacity:0.6; }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<div class="panel" id="panel">
+  <div class="panel-title">設定</div>
+  <div class="panel-section">
+    <div class="panel-label">利確 : 損切り 比率</div>
+    <div class="ratio-row">
+      <input class="ratio-input" type="number" id="ratioProfit" value="2" min="0.1" step="0.1" oninput="applyRatio()">
+      <span class="ratio-sep">:</span>
+      <input class="ratio-input" type="number" id="ratioStop" value="1" min="0.1" step="0.1" oninput="applyRatio()">
+    </div>
+    <div class="ratio-hint">例）2:1 → 利確1%なら損切り0.5%</div>
+  </div>
+  <div class="panel-section">
+    <div class="panel-label">広告</div>
+    <button class="btn-purchase" id="btn-purchase" onclick="doPurchase()">広告を削除 ¥1,000</button>
+    <div class="thanks-text" id="thanks-text">ご支援ありがとうございます</div>
+  </div>
+  <div class="version-text">デイトレ計算ツール v1.0.0</div>
+</div>
+
+<div class="header">
+  <h1>デイトレ 計算ツール</h1>
+  <button class="menu-btn" onclick="openPanel()">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<div class="settings">
+  <div class="setting-item">
+    <div class="setting-label">利確 %</div>
+    <div class="setting-input">
+      <input type="number" id="profitPct" value="1.0" step="0.1" min="0.1"
+             oninput="syncRatio('profit'); recalcFromSettings()"
+             onfocus="this.select()">
+      <span class="pct-label">%</span>
+    </div>
+  </div>
+  <div class="setting-item">
+    <div class="setting-label">損切り %</div>
+    <div class="setting-input">
+      <input type="number" id="stopPct" value="0.5" step="0.1" min="0.1"
+             oninput="syncRatio('stop'); recalcFromSettings()"
+             onfocus="this.select()">
+      <span class="pct-label">%</span>
+    </div>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card green" id="card-profit">
+    <div class="card-header">
+      <span class="card-label">利確ライン</span>
+      <span class="card-badge" id="badge-profit">+1.0%</span>
+    </div>
+    <div class="card-input-row">
+      <input class="price-input" type="text" inputmode="numeric" id="inp-profit" placeholder="—"
+             oninput="fmtInput(this); onInput('profit')" onfocus="this.select(); onFocus('profit')">
+      <span class="yen-label">円</span>
+    </div>
+  </div>
+  <div class="card neutral active" id="card-entry">
+    <div class="card-header">
+      <span class="card-label">買値</span>
+      <span class="card-badge" id="badge-entry">基準</span>
+    </div>
+    <div class="card-input-row">
+      <input class="price-input" type="text" inputmode="numeric" id="inp-entry" placeholder="—"
+             oninput="fmtInput(this); onInput('entry')" onfocus="this.select(); onFocus('entry')">
+      <span class="yen-label">円</span>
+    </div>
+  </div>
+  <div class="card red" id="card-stop">
+    <div class="card-header">
+      <span class="card-label">損切りライン</span>
+      <span class="card-badge" id="badge-stop">−0.5%</span>
+    </div>
+    <div class="card-input-row">
+      <input class="price-input" type="text" inputmode="numeric" id="inp-stop" placeholder="—"
+             oninput="fmtInput(this); onInput('stop')" onfocus="this.select(); onFocus('stop')">
+      <span class="yen-label">円</span>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-rows">
+  <div class="data-row">
+    <span class="data-label">株数</span>
+    <input class="data-input" type="text" inputmode="numeric" id="inp-shares" placeholder="—"
+           oninput="fmtInput(this); calcLossFromShares()" onfocus="this.select()">
+    <span class="data-unit">株</span>
+  </div>
+  <div class="data-row">
+    <span class="data-label">最大損失</span>
+    <input class="data-input red-val" type="text" inputmode="numeric" id="inp-maxloss" placeholder="—"
+           oninput="fmtInput(this); calcSharesFromLoss()" onfocus="this.select()">
+    <span class="data-unit">円</span>
+  </div>
+  <div class="data-row">
+    <span class="data-label">買付余力</span>
+    <input class="data-input" type="text" inputmode="numeric" id="inp-capital" placeholder="—"
+           oninput="fmtInput(this); saveCapital()" onfocus="this.select()">
+    <span class="data-unit">円</span>
+  </div>
+</div>
+
+<div class="pnl-row" id="pnl-section" style="display:none">
+  <div class="pnl-card profit">
+    <div class="pnl-title">想定利益</div>
+    <div class="pnl-value" id="pnl-profit">—</div>
+  </div>
+  <div class="pnl-card loss">
+    <div class="pnl-title">想定損失</div>
+    <div class="pnl-value" id="pnl-loss">—</div>
+  </div>
+</div>
+
+<button class="btn-clear" onclick="clearAll()">クリア</button>
+
+<script>
+var lastEdited = 'entry';
+
+function openPanel() {
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function doPurchase() {
+  if (typeof AndroidBridge !== 'undefined') {
+    AndroidBridge.purchase();
+  }
+}
+
+function disablePurchaseButton() {
+  var btn = document.getElementById('btn-purchase');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+    btn.textContent = '購入済み';
+  }
+}
+
+function applyRatio() {
+  var rp = parseFloat(document.getElementById('ratioProfit').value) || 2;
+  var rs = parseFloat(document.getElementById('ratioStop').value) || 1;
+  localStorage.setItem('ratioProfit', rp);
+  localStorage.setItem('ratioStop', rs);
+  var p = parseFloat(document.getElementById('profitPct').value) || 1.0;
+  document.getElementById('stopPct').value = (p * rs / rp).toFixed(1);
+  saveSettings();
+  recalcFromSettings();
+}
+
+function fmtInput(el) {
+  var raw = el.value.replace(/[^0-9]/g, '');
+  el.value = raw ? parseInt(raw, 10).toLocaleString('ja-JP') : '';
+}
+
+function getVal(id) {
+  var n = parseFloat(document.getElementById(id).value.replace(/,/g, ''));
+  return isNaN(n) ? NaN : n;
+}
+
+function setVal(id, val) {
+  var el = document.getElementById(id);
+  el.value = (val && !isNaN(val)) ? Math.round(val).toLocaleString('ja-JP') : '';
+}
+
+function syncRatio(changed) {
+  var rp = parseFloat(localStorage.getItem('ratioProfit')) || 2;
+  var rs = parseFloat(localStorage.getItem('ratioStop')) || 1;
+  if (changed === 'profit') {
+    var p = parseFloat(document.getElementById('profitPct').value) || 1.0;
+    document.getElementById('stopPct').value = (p * rs / rp).toFixed(1);
+  } else {
+    var s = parseFloat(document.getElementById('stopPct').value) || 0.5;
+    document.getElementById('profitPct').value = (s * rp / rs).toFixed(1);
+  }
+  saveSettings();
+}
+
+function getPct() {
+  return {
+    profit: parseFloat(document.getElementById('profitPct').value) || 1.0,
+    stop:   parseFloat(document.getElementById('stopPct').value) || 0.5
+  };
+}
+
+function saveSettings() {
+  localStorage.setItem('profitPct', document.getElementById('profitPct').value);
+  localStorage.setItem('stopPct', document.getElementById('stopPct').value);
+}
+
+function saveMaxloss() {
+  var v = document.getElementById('inp-maxloss').value.replace(/,/g, '');
+  if (v) localStorage.setItem('maxloss', v); else localStorage.removeItem('maxloss');
+}
+
+function saveCapital() {
+  var v = document.getElementById('inp-capital').value.replace(/,/g, '');
+  if (v) localStorage.setItem('capital', v); else localStorage.removeItem('capital');
+}
+
+function loadSaved() {
+  var pp = localStorage.getItem('profitPct');
+  var sp = localStorage.getItem('stopPct');
+  var ml = localStorage.getItem('maxloss');
+  var ca = localStorage.getItem('capital');
+  var rp = localStorage.getItem('ratioProfit');
+  var rs = localStorage.getItem('ratioStop');
+  if (pp) document.getElementById('profitPct').value = pp;
+  if (sp) document.getElementById('stopPct').value = sp;
+  if (ml) document.getElementById('inp-maxloss').value = parseInt(ml).toLocaleString('ja-JP');
+  if (ca) document.getElementById('inp-capital').value = parseInt(ca).toLocaleString('ja-JP');
+  if (rp) document.getElementById('ratioProfit').value = rp;
+  if (rs) document.getElementById('ratioStop').value = rs;
+  if (typeof AndroidBridge !== 'undefined' && AndroidBridge.isPurchased()) {
+    disablePurchaseButton();
+  }
+}
+
+function onFocus(field) {
+  ['profit','entry','stop'].forEach(function(f) {
+    document.getElementById('card-' + f).classList.remove('active');
+  });
+  document.getElementById('card-' + field).classList.add('active');
+}
+
+function onInput(field) {
+  lastEdited = field;
+  calculate(field);
+  var ml = getVal('inp-maxloss');
+  var sh = getVal('inp-shares');
+  if (!isNaN(ml) && ml > 0) { calcSharesFromLoss(); }
+  else if (!isNaN(sh) && sh > 0) { calcLossFromShares(); }
+  updatePnl();
+}
+
+function recalcFromSettings() {
+  updateBadges();
+  saveSettings();
+  if (lastEdited) calculate(lastEdited);
+  var ml = getVal('inp-maxloss');
+  var sh = getVal('inp-shares');
+  if (!isNaN(ml) && ml > 0) { calcSharesFromLoss(); }
+  else if (!isNaN(sh) && sh > 0) { calcLossFromShares(); }
+  updatePnl();
+}
+
+function calculate(source) {
+  var pct = getPct();
+  var pm = 1 + pct.profit / 100;
+  var sm = 1 - pct.stop / 100;
+  var val = getVal('inp-' + source);
+  if (isNaN(val) || !val) return;
+  var entry, profit, stop;
+  if (source === 'entry')       { entry = val; profit = val * pm; stop = val * sm; }
+  else if (source === 'profit') { entry = val / pm; profit = val; stop = entry * sm; }
+  else                          { entry = val / sm; profit = entry * pm; stop = val; }
+  if (source !== 'profit') setVal('inp-profit', profit);
+  if (source !== 'entry')  setVal('inp-entry', entry);
+  if (source !== 'stop')   setVal('inp-stop', stop);
+}
+
+function updateBadges() {
+  var pct = getPct();
+  document.getElementById('badge-profit').textContent = '+' + pct.profit.toFixed(1) + '%';
+  document.getElementById('badge-stop').textContent = '-' + pct.stop.toFixed(1) + '%';
+}
+
+function capByCapital(lotShares) {
+  var capital = getVal('inp-capital');
+  var entry = getVal('inp-entry');
+  if (isNaN(capital) || isNaN(entry) || !capital || !entry) return lotShares;
+  var capLot = Math.floor(Math.floor(capital / entry) / 100) * 100;
+  return Math.min(lotShares, capLot);
+}
+
+function calcSharesFromLoss() {
+  var ml = getVal('inp-maxloss');
+  var entry = getVal('inp-entry');
+  var stop = getVal('inp-stop');
+  if (isNaN(ml) || isNaN(entry) || isNaN(stop) || !ml || !entry || !stop || entry <= stop) return;
+  saveMaxloss();
+  var lps = entry - stop;
+  var lotShares = capByCapital(Math.floor(Math.floor(ml / lps) / 100) * 100);
+  if (lotShares > 0) { setVal('inp-shares', lotShares); updatePnl(); }
+}
+
+function calcLossFromShares() {
+  var shares = getVal('inp-shares');
+  var entry = getVal('inp-entry');
+  var stop = getVal('inp-stop');
+  if (isNaN(shares) || isNaN(entry) || isNaN(stop) || !shares || !entry || !stop || entry <= stop) return;
+  setVal('inp-maxloss', Math.round((entry - stop) * shares));
+  saveMaxloss();
+  updatePnl();
+}
+
+function updatePnl() {
+  var shares = getVal('inp-shares');
+  var entry = getVal('inp-entry');
+  var profit = getVal('inp-profit');
+  var stop = getVal('inp-stop');
+  var sec = document.getElementById('pnl-section');
+  if (isNaN(shares) || isNaN(entry) || isNaN(profit) || isNaN(stop) || !shares || !entry) {
+    sec.style.display = 'none'; return;
+  }
+  var pg = Math.round((profit - entry) * shares);
+  var pl = Math.round((stop - entry) * shares);
+  document.getElementById('pnl-profit').textContent = '+¥' + pg.toLocaleString('ja-JP');
+  document.getElementById('pnl-loss').textContent = '-¥' + Math.abs(pl).toLocaleString('ja-JP');
+  sec.style.display = 'grid';
+}
+
+function clearAll() {
+  ['inp-profit','inp-entry','inp-stop','inp-shares'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('pnl-section').style.display = 'none';
+  ['profit','entry','stop'].forEach(function(f) {
+    document.getElementById('card-' + f).classList.remove('active');
+  });
+  document.getElementById('card-entry').classList.add('active');
+  lastEdited = 'entry';
+}
+
+updateBadges();
+loadSaved();
+updateBadges();
+</script>
+</body>
+</html>
